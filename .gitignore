@@ -1,0 +1,7 @@
+/genai/
+/venv/
+__pycache__/
+*.log
+*.db
+*~
+.DS_Store
