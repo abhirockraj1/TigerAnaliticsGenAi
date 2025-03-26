@@ -20,6 +20,16 @@ async def login_for_access_token(form_data: security.OAuth2PasswordRequestForm =
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.post("/collaborators/validate", response_model=user_schema.UserResponse)
+def validate_collaborator(
+    creds: user_schema.UserCredentials,
+    db: Session = Depends(database.get_db),
+):
+    user = user_service.get_user_by_username(db, creds.username)
+    if not user or user.role != UserRole.collaborator or not security.verify_password(creds.password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid collaborator credentials")
+    return user
+
 @router.post("/users/", response_model=user_schema.UserResponse)
 def create_user(user: user_schema.UserCreate, db: Session = Depends(database.get_db), current_user: user_schema.UserResponse = Depends(security.owner_access)):
     db_user = user_service.create_user(db, user)
@@ -29,6 +39,10 @@ def create_owner(
     owner_in: user_schema.UserCreate,
     db: Session = Depends(database.get_db),
 ):
+    if(owner_in.role == UserRole.collaborator):
+        raise HTTPException(status_code=400, detail="Owner role must be 'owner'")
+    elif(user_service.get_user_by_username(db, owner_in.username) != None):
+        raise HTTPException(status_code=409, detail="Username already exists")
     db_user = user_service.create_user(db, owner_in)
     return db_user
 

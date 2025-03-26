@@ -23,3 +23,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str
     role: UserRole
+
+class UserCredentials(BaseModel):
+    username: str
+    password: str
